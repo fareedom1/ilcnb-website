@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,7 +8,16 @@ import { Menu, X, Calendar, Info, HeartHandshake, Home } from 'lucide-react';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
+  const [isInitialPlay, setIsInitialPlay] = useState(true);
+  const videoRef = useRef(null);
   const pathname = usePathname();
+
+  // ==========================================
+  // CHANGE THIS NUMBER TO FIND THE PERFECT FRAME
+  // 0.0 is the very beginning, 1.5 is 1.5 seconds in, etc.
+  const staticFrameTime = 4.0; 
+  // ==========================================
 
   const navLinks = [
     { id: '/', label: 'Home', icon: Home },
@@ -16,6 +25,43 @@ export default function Header() {
     { id: '/about', label: 'About', icon: Info },
     { id: '/donate', label: 'Support', icon: HeartHandshake }
   ];
+
+  // 1. Play video automatically on website load
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 2.0;
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(e => console.log("Auto-play prevented:", e));
+    }
+
+    // Stop the initial animation after 2 seconds and snap to your chosen frame
+    const timer = setTimeout(() => {
+      setIsInitialPlay(false);
+      if (videoRef.current && !isLogoHovered) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = staticFrameTime;
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [isLogoHovered]);
+
+  const handleLogoMouseEnter = () => {
+    setIsLogoHovered(true);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 2.0; 
+      videoRef.current.currentTime = 0; // Starts the animation from the beginning
+      videoRef.current.play().catch(e => console.log("Video playback prevented:", e));
+    }
+  };
+
+  const handleLogoMouseLeave = () => {
+    setIsLogoHovered(false);
+    if (videoRef.current && !isInitialPlay) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = staticFrameTime; // Snaps back to your chosen frame
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-emerald-100">
@@ -25,22 +71,33 @@ export default function Header() {
           {/* Logo area */}
           <Link 
             href="/"
-            className="flex items-center space-x-3 cursor-pointer group"
+            className="flex items-center space-x-5 cursor-pointer group outline-none focus:outline-none [-webkit-tap-highlight-color:transparent]"
+            onMouseEnter={handleLogoMouseEnter}
+            onMouseLeave={handleLogoMouseLeave}
+            onTouchStart={handleLogoMouseEnter}
+            onTouchEnd={handleLogoMouseLeave}
           >
-            <img 
-              src="/logo.png" 
-              alt="ILCNB Logo" 
-              className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => {
-                e.target.onerror = null; 
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-            {/* Fallback box if image is missing */}
-            <div className="hidden w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl items-center justify-center text-white font-bold shadow-lg shadow-emerald-200 group-hover:scale-105 transition-transform duration-300">
+            <div className="relative flex-shrink-0 w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white border border-stone-200 rounded-2xl p-1.5 shadow-sm group-hover:scale-105 transition-transform duration-300 overflow-hidden flex items-center justify-center">
+              
+              {/* Single Video Element */}
+              <video
+                ref={videoRef}
+                // The #t= tag tells the browser to load this specific frame before Javascript even runs
+                src={`/logo.mp4#t=${staticFrameTime}`} 
+                // Removed all the shifting/cropping hacks. Just keeping scale-[1.15] so it fills the box.
+                className="w-full h-full object-cover mix-blend-multiply scale-[1.15] z-10"
+                muted
+                playsInline
+                preload="metadata"
+                loop={false} 
+              />
+            </div>
+
+            {/* Fallback box if video completely fails to load */}
+            <div className="hidden flex-shrink-0 w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl items-center justify-center text-white font-bold shadow-lg shadow-emerald-200 group-hover:scale-105 transition-transform duration-300">
               <span className="text-lg sm:text-xl tracking-tighter">ILC</span>
             </div>
+            
             <span className="text-[13px] sm:text-[15px] md:text-xl lg:text-2xl font-extrabold tracking-tight text-black leading-snug max-w-[200px] sm:max-w-none">
               Islamic Learning Center of North Broward
             </span>

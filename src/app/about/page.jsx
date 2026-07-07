@@ -2,13 +2,16 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Users, MapPin, Send } from 'lucide-react';
+import { MapPin, Send } from 'lucide-react';
 
 export default function AboutPage() {
   const leaders = [
     { name: "Imam Bismil", role: "Imam" },
     { name: "Syed Sharafat Ali", role: "President" },
-    { name: "Babar Shahzad", role: "Vice President" }
+    { name: "Babar Shahzad", role: "Vice President" },
+    { name: "Nadeem Akhter", role: "Vice President" },
+    { name: "Amir Siddiqi", role: "Treasurer" },
+    { name: "Muhammad Farhan", role: "General Secretary" }
   ];
 
   return (
@@ -51,11 +54,8 @@ export default function AboutPage() {
             <motion.div 
               key={idx}
               whileHover={{ y: -5 }}
-              className="bg-white p-8 rounded-3xl shadow-sm border border-stone-100 text-center flex flex-col items-center"
+              className="bg-white p-8 rounded-3xl shadow-sm border border-stone-100 text-center flex flex-col items-center justify-center min-h-[140px]"
             >
-              <div className="w-20 h-20 bg-stone-100 rounded-full mb-6 flex items-center justify-center text-stone-400">
-                <Users size={32} />
-              </div>
               <h3 className="text-xl font-bold text-stone-900 mb-1">{leader.name}</h3>
               <p className="text-emerald-600 font-semibold uppercase tracking-wider text-sm">{leader.role}</p>
             </motion.div>
