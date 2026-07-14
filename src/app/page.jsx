@@ -8,7 +8,7 @@ export default function HomePage() {
   const [timings, setTimings] = useState(null);
   const [currentPrayer, setCurrentPrayer] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+  // Trigger dev build
   // HUD States
   const [hudState, setHudState] = useState("floating-footer");
   const [upcomingEvent, setUpcomingEvent] = useState(null);
