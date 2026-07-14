@@ -310,7 +310,6 @@ export default function HomePage() {
                         >
                           <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                             <div className="flex items-center font-bold text-base sm:text-lg">
-                              <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full mr-2 sm:mr-3 flex-shrink-0 ${isNext ? 'bg-emerald-500 animate-pulse' : 'bg-stone-300'}`} />
                               <span>{prayer}</span>
                               {isNext && <span className="ml-2 sm:ml-3 text-[8px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-white px-2 py-0.5 sm:py-1 rounded-full shadow-sm">Next</span>}
                               {isCurrent && <span className="ml-2 sm:ml-3 text-[8px] sm:text-[10px] font-black uppercase tracking-wider bg-stone-200 text-stone-600 px-2 py-0.5 sm:py-1 rounded-full">Current</span>}
