@@ -128,7 +128,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Navigation Dropdown */}
+      {/* Mobile Navigation Dropdown  */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
