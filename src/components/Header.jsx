@@ -15,7 +15,6 @@ export default function Header() {
 
   // ==========================================
   // CHANGE THIS NUMBER TO FIND THE PERFECT FRAME
-  // 0.0 is the very beginning, 1.5 is 1.5 seconds in, etc.
   const staticFrameTime = 4.0; 
   // ==========================================
 
@@ -26,31 +25,20 @@ export default function Header() {
     { id: '/donate', label: 'Support', icon: HeartHandshake }
   ];
 
-  // 1. Play video automatically on website load
+  // 1. Play video automatically on website load (No artificial timer)
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.playbackRate = 2.0;
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(e => console.log("Auto-play prevented:", e));
     }
-
-    // Stop the initial animation after 2 seconds and snap to your chosen frame
-    const timer = setTimeout(() => {
-      setIsInitialPlay(false);
-      if (videoRef.current && !isLogoHovered) {
-        videoRef.current.pause();
-        videoRef.current.currentTime = staticFrameTime;
-      }
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [isLogoHovered]);
+  }, []);
 
   const handleLogoMouseEnter = () => {
     setIsLogoHovered(true);
     if (videoRef.current) {
       videoRef.current.playbackRate = 2.0; 
-      videoRef.current.currentTime = 0; // Starts the animation from the beginning
+      videoRef.current.currentTime = 0; 
       videoRef.current.play().catch(e => console.log("Video playback prevented:", e));
     }
   };
@@ -59,7 +47,7 @@ export default function Header() {
     setIsLogoHovered(false);
     if (videoRef.current && !isInitialPlay) {
       videoRef.current.pause();
-      videoRef.current.currentTime = staticFrameTime; // Snaps back to your chosen frame
+      videoRef.current.currentTime = staticFrameTime; 
     }
   };
 
@@ -77,24 +65,27 @@ export default function Header() {
             onTouchStart={handleLogoMouseEnter}
             onTouchEnd={handleLogoMouseLeave}
           >
-            <div className="relative flex-shrink-0 w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white border border-stone-200 rounded-2xl p-1.5 shadow-sm group-hover:scale-105 transition-transform duration-300 overflow-hidden flex items-center justify-center">
+            <div className="relative flex-shrink-0 w-12 h-12 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white border border-stone-200 rounded-xl p-1 sm:p-1.5 shadow-sm group-hover:scale-105 transition-transform duration-300 overflow-hidden flex items-center justify-center">
               
-              {/* Single Video Element */}
               <video
                 ref={videoRef}
-                // The #t= tag tells the browser to load this specific frame before Javascript even runs
                 src={`/logo.mp4#t=${staticFrameTime}`} 
-                // Removed all the shifting/cropping hacks. Just keeping scale-[1.15] so it fills the box.
-                className="w-full h-full object-cover mix-blend-multiply scale-[1.15] z-10"
+                className="w-full h-full object-cover mix-blend-multiply scale-[1.20] sm:scale-[1.15] z-10"
                 muted
                 playsInline
                 preload="metadata"
                 loop={false} 
+                /* NEW: Handles the end of the video naturally instead of using a timer */
+                onEnded={() => {
+                  setIsInitialPlay(false);
+                  if (videoRef.current && !isLogoHovered) {
+                    videoRef.current.currentTime = staticFrameTime;
+                  }
+                }}
               />
             </div>
 
-            {/* Fallback box if video completely fails to load */}
-            <div className="hidden flex-shrink-0 w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl items-center justify-center text-white font-bold shadow-lg shadow-emerald-200 group-hover:scale-105 transition-transform duration-300">
+            <div className="hidden flex-shrink-0 w-12 h-12 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl items-center justify-center text-white font-bold shadow-lg shadow-emerald-200 group-hover:scale-105 transition-transform duration-300">
               <span className="text-lg sm:text-xl tracking-tighter">ILC</span>
             </div>
             
