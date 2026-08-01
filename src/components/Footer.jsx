@@ -9,7 +9,8 @@ export default function Footer() {
     { id: '/', label: 'Home' },
     { id: '/events', label: 'Events' },
     { id: '/about', label: 'About' },
-    { id: '/donate', label: 'Support' }
+    { id: '/donate', label: 'Support' },
+    { id: '/gallery', label: 'Gallery' }
   ];
 
   return (

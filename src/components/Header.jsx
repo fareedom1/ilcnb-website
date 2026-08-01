@@ -22,7 +22,8 @@ export default function Header() {
     { id: '/', label: 'Home', icon: Home },
     { id: '/events', label: 'Events', icon: Calendar },
     { id: '/about', label: 'About', icon: Info },
-    { id: '/donate', label: 'Support', icon: HeartHandshake }
+    { id: '/donate', label: 'Support', icon: HeartHandshake },
+    { id: '/gallery', label: 'Gallery', icon: HeartHandshake }
   ];
 
   // 1. Play video automatically on website load (No artificial timer)
