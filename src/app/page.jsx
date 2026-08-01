@@ -8,7 +8,7 @@ export default function HomePage() {
   const [timings, setTimings] = useState(null);
   const [currentPrayer, setCurrentPrayer] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Trigger dev build
+  
   // HUD States
   const [hudState, setHudState] = useState("floating-footer");
   const [upcomingEvent, setUpcomingEvent] = useState(null);
@@ -105,27 +105,26 @@ export default function HomePage() {
     setLoading(false);
   };
 
+  // Hardcoded 24-hour times for manual Iqamas
   const calculateIqama24 = (time24, prayerName) => {
-    if (prayerName === 'Dhuhr' || prayerName === 'Asr') return null;
-    let [h, m] = time24.split(':').map(Number);
-    let date = new Date();
-    date.setHours(h, m, 0);
-
-    if (prayerName === 'Maghrib') {
-      date.setMinutes(date.getMinutes() + 3);
-    } else {
-      date.setMinutes(date.getMinutes() + 10);
-      let mins = date.getMinutes();
-      let remainder = mins % 10;
-      if (remainder !== 0) {
-        date.setMinutes(mins + (10 - remainder));
-      }
+    switch (prayerName) {
+      case 'Fajr':
+        return '06:00';
+      case 'Dhuhr':
+        return '13:45';
+      case 'Asr':
+        return '18:30';
+      case 'Maghrib':
+        return time24; // Exact same as Adhan time
+      case 'Isha':
+        return '21:45';
+      default:
+        return time24;
     }
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
+  // Format the manual 24-hour time to 12-hour AM/PM format
   const calculateIqama = (time24, prayerName) => {
-    if (prayerName === 'Dhuhr' || prayerName === 'Asr') return '--:--';
     const time24Iqama = calculateIqama24(time24, prayerName);
     return format12H(time24Iqama);
   };
@@ -142,8 +141,6 @@ export default function HomePage() {
   useEffect(() => {
     if (loading) return;
     const interval = setInterval(() => {
-      // Reprocess timings to update current and upcoming dynamically
-      // We rely on the already fetched timings in the state
       if (timings) processTimings(timings);
     }, 1000);
     return () => clearInterval(interval);
@@ -160,10 +157,8 @@ export default function HomePage() {
       const viewportHeight = window.innerHeight;
       const scrollY = window.scrollY;
       
-      // tableAbsoluteTop is the top of the entire section (which includes wrapperRef)
       const tableAbsoluteTop = tableRect.top + scrollY;
 
-      // Calculate HUD height and Header height dynamically
       const hudHeight = hudRef.current ? hudRef.current.offsetHeight : (window.innerWidth >= 640 ? 69 : 58);
       const headerEl = document.querySelector('header');
       const currentHeaderHeight = headerEl ? headerEl.offsetHeight : (window.innerWidth >= 640 ? 113 : 72);
@@ -175,11 +170,8 @@ export default function HomePage() {
       }
 
       let newState = "floating-footer";
-      const bottomOffset = 24; // bottom-6
+      const bottomOffset = 24; 
 
-      // Floating HUD bottom: scrollY + viewportHeight - bottomOffset
-      // Docked HUD bottom: tableAbsoluteTop + hudHeight
-      // Add a 40px magnetic snap threshold so it docks slightly earlier before visually overlapping
       const magneticSnapOffset = 40;
       if (scrollY + viewportHeight - bottomOffset < tableAbsoluteTop + hudHeight + magneticSnapOffset) {
         newState = "floating-footer";
@@ -223,12 +215,6 @@ export default function HomePage() {
           }}
         />
         
-        {/* 1. White Base Overlay */}
-        <div className="absolute inset-0 z-0 bg-white/70 backdrop-blur-[2px]" />
-        
-        {/* 2. Very Light Green Gradient */}
-        <div className="absolute inset-0 z-0 bg-gradient-to-b from-emerald-50/40 via-emerald-50/10 to-emerald-50/80" />
-
         <div className="relative z-10 w-full max-w-4xl flex flex-col items-center md:mt-8">
           
           {/* Core Hero Text */}
@@ -244,9 +230,6 @@ export default function HomePage() {
             <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-black leading-tight">
               السلام عليكم ورحمة الله وبركاته
             </h1>
-            <div className="inline-flex items-center justify-center text-black font-medium text-[10px] sm:text-xs mt-6 sm:mt-8 mb-10 text-center px-1 whitespace-nowrap tracking-wider uppercase">
-              4405 W Hillsboro Blvd, Coconut Creek, FL 33073
-            </div>
           </motion.div>
         </div>
       </div>
@@ -350,7 +333,7 @@ export default function HomePage() {
             </div>
             <div className="bg-emerald-50 px-5 py-2 rounded-2xl shadow-sm border border-emerald-100 text-center w-full sm:w-auto">
               <span className="block text-[10px] sm:text-xs text-black font-semibold uppercase tracking-widest mb-0.5">Friday</span>
-              <span className="block text-xl font-black text-emerald-700">1:30 PM</span>
+              <span className="block text-xl font-black text-emerald-700">1:40 PM</span>
             </div>
           </div>
 

@@ -10,7 +10,7 @@ export default function EventsPage() {
       title: "Jummah Prayer",
       category: "General",
       date: "Every Friday",
-      time: "1:30 PM",
+      time: "1:40 PM",
       description: "Weekly congregational prayer and khutbah. Please arrive early as space fills up quickly.",
       icon: Users
     },

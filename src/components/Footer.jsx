@@ -9,8 +9,8 @@ export default function Footer() {
     { id: '/', label: 'Home' },
     { id: '/events', label: 'Events' },
     { id: '/about', label: 'About' },
-    { id: '/donate', label: 'Support' },
-    { id: '/gallery', label: 'Gallery' }
+    { id: '/gallery', label: 'Gallery' },
+    { id: '/donate', label: 'Support' }
   ];
 
   return (
@@ -29,7 +29,7 @@ export default function Footer() {
                 ILCNB
               </h3>
               <p className="text-stone-400 max-w-md leading-relaxed text-lg">
-                Islamic Learning Center of North Broward. A welcoming place of worship, community growth, and learning. We welcome all to especially join us at Fajr, Maghrib, and Isha for daily prayers.
+                Islamic Learning Center of North Broward. A welcoming place of worship, community growth, and learning. We welcome everyone to join us for all daily prayers.
               </p>
             </div>
             
@@ -75,7 +75,7 @@ export default function Footer() {
 
         <div className="border-t border-stone-800/80 w-full mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-stone-500 select-none">
           <p>© {new Date().getFullYear()} Islamic Learning Center of North Broward.</p>
-          <p>Peace be upon you.</p>
+          <p>May peace be upon you.</p>
         </div>
       </div>
     </footer>
