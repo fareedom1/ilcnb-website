@@ -123,7 +123,7 @@ export default function PrayerHUD({ hudState, hudRef, upcomingEvent, headerHeigh
           <div className="flex flex-col">
             <span className="hidden md:block text-[10px] uppercase tracking-wider text-black font-semibold">Upcoming Prayer</span>
             <span className="text-[10px] md:hidden uppercase tracking-wider text-black font-semibold">Next</span>
-            <span className="text-base md:text-xl font-serif font-bold text-emerald-700 leading-none">{displayEvent.name}</span>
+            <span className="text-base md:text-xl font-bold text-emerald-700 leading-none">{displayEvent.name}</span>
           </div>
         </div>
 
@@ -131,7 +131,7 @@ export default function PrayerHUD({ hudState, hudRef, upcomingEvent, headerHeigh
         <div className="flex items-center gap-4 md:gap-8 text-center md:text-left">
           <div className="flex flex-col">
             <span className="text-[10px] uppercase tracking-wider text-black font-semibold">Iqamah</span>
-            <span className="text-sm md:text-base font-bold font-mono text-emerald-600 leading-none md:leading-normal mt-0.5 md:mt-0">{displayEvent.iqamah}</span>
+            <span className="text-sm md:text-base font-bold text-emerald-600 leading-none md:leading-normal mt-0.5 md:mt-0">{displayEvent.iqamah}</span>
           </div>
         </div>
 
@@ -140,7 +140,7 @@ export default function PrayerHUD({ hudState, hudRef, upcomingEvent, headerHeigh
           <span className="md:block text-[10px] uppercase tracking-wider text-black font-semibold">
             Time to Iqamah
           </span>
-          <span className="text-sm md:text-base font-mono font-bold text-emerald-600 leading-none md:leading-normal mt-0.5 md:mt-0">{countdownStr}</span>
+          <span className="text-sm md:text-base font-bold text-emerald-600 leading-none md:leading-normal mt-0.5 md:mt-0">{countdownStr}</span>
         </div>
         
       </div>

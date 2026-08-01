@@ -241,7 +241,7 @@ export default function HomePage() {
             <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-black italic drop-shadow-sm px-2 mb-6 sm:mb-8">
               May the peace, mercy and blessings of Allah (God) be upon you.
             </h2>
-            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-black font-serif leading-tight">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-black leading-tight">
               السلام عليكم ورحمة الله وبركاته
             </h1>
             <div className="inline-flex items-center justify-center text-black font-medium text-[10px] sm:text-xs mt-6 sm:mt-8 mb-10 text-center px-1 whitespace-nowrap tracking-wider uppercase">
