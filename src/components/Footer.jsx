@@ -1,10 +1,14 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { MapPin, Send } from 'lucide-react';
 
 export default function Footer() {
+  const router = useRouter();
+  const [tapCount, setTapCount] = useState(0);
+
   const navLinks = [
     { id: '/', label: 'Home' },
     { id: '/events', label: 'Events' },
@@ -12,6 +16,26 @@ export default function Footer() {
     { id: '/gallery', label: 'Gallery' },
     { id: '/donate', label: 'Support' }
   ];
+
+  // The 5-Tap Logic (Corrected)
+  const handleSecretTap = () => {
+    const newCount = tapCount + 1;
+    
+    if (newCount === 5) {
+      setTapCount(0); // Reset the count
+      router.push('/admin'); // Trigger navigation outside of the state setter
+    } else {
+      setTapCount(newCount);
+    }
+  };
+
+  // Reset the tap counter if they stop tapping for 3 seconds
+  useEffect(() => {
+    if (tapCount > 0) {
+      const timer = setTimeout(() => setTapCount(0), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [tapCount]);
 
   return (
     <footer className="bg-stone-950 text-stone-300 py-16 mt-auto border-t border-stone-900 relative overflow-hidden">
@@ -24,7 +48,11 @@ export default function Footer() {
           {/* Left Column (Brand & Contact) */}
           <div className="md:col-span-8 lg:col-span-9 flex flex-col space-y-8">
             <div>
-              <h3 className="text-3xl font-extrabold text-white tracking-tight mb-4 flex items-center gap-3">
+              {/* Secret Admin Trigger added to this h3 tag */}
+              <h3 
+                onClick={handleSecretTap}
+                className="text-3xl font-extrabold text-white tracking-tight mb-4 flex items-center gap-3 select-none cursor-pointer w-max"
+              >
                 <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain" onError={(e) => e.target.style.display='none'} />
                 ILCNB
               </h3>

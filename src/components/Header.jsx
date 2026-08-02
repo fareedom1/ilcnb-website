@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Calendar, Info, HeartHandshake, Home } from 'lucide-react';
+import { Menu, X, Calendar, Info, HeartHandshake, Home, ImageIcon } from 'lucide-react';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -22,7 +22,7 @@ export default function Header() {
     { id: '/', label: 'Home', icon: Home },
     { id: '/events', label: 'Events', icon: Calendar },
     { id: '/about', label: 'About', icon: Info },
-    { id: '/gallery', label: 'Gallery', icon: HeartHandshake },
+    { id: '/gallery', label: 'Gallery', icon: ImageIcon },
     { id: '/donate', label: 'Support', icon: HeartHandshake }
   ];
 
