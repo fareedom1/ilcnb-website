@@ -202,8 +202,8 @@ export default function HomeClient({ initialBgImage, initialIqama }) {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-center w-full flex flex-col items-center"
           >
-            <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-black italic px-6 py-3 mb-6 sm:mb-8 rounded-2xl bg-white/10 backdrop-blur-[2px] shadow-[0_0_20px_10px_rgba(255,255,255,0.1)]">
-              May the peace, mercy and blessings of Allah (God) be upon you.
+           <h2 className="text-base sm:text-lg md:text-[32px] md:leading-tight font-semibold text-black italic px-6 py-3 mb-6 sm:mb-8 rounded-2xl bg-white/10 backdrop-blur-[2px] shadow-[0_0_20px_10px_rgba(255,255,255,0.1)]">
+            May the peace, mercy and blessings of Allah (God) be upon you
             </h2>
             <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-black leading-tight px-8 py-5 rounded-3xl bg-white/10 backdrop-blur-[2px] shadow-[0_0_30px_15px_rgba(255,255,255,0.1)]">
               السلام عليكم ورحمة الله وبركاته
