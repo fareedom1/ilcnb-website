@@ -257,7 +257,7 @@ export default function AdminDashboard() {
                 <div className="bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl p-10 flex flex-col items-center justify-center text-center cursor-default">
                   <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center text-emerald-600 mb-4"><ImageIcon size={32} /></div>
                   <h3 className="text-lg font-bold text-stone-800 mb-2">Upload to Public Gallery</h3>
-                  <p className="text-stone-500 mb-6 max-w-sm">Images uploaded here will automatically appear on the public `/gallery` page. (1GB Storage Limit)</p>
+                  <p className="text-stone-500 mb-6 max-w-sm">Images uploaded here will automatically appear on the gallery page. (1 GB Storage Limit)</p>
                   <label className={`relative cursor-pointer inline-flex items-center space-x-2 px-8 py-4 rounded-full font-semibold text-white transition-all duration-300 ${isUploading ? 'bg-stone-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 shadow-md hover:-translate-y-0.5'}`}>
                     {isUploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
                     <span>{isUploading ? 'Uploading to database...' : 'Select Image to Upload'}</span>

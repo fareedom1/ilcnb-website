@@ -187,13 +187,17 @@ export default function HomeClient({ initialBgImage, initialIqama }) {
 
   return (
     <div className="w-full flex flex-col items-center pb-20">
-      <div className="w-full relative min-h-[calc(100vh-5rem)] flex flex-col items-center justify-start pt-28 md:justify-center md:pt-0 pb-32 px-4 overflow-hidden bg-emerald-50">
+      {/* Notice bg-white at the very end of this line! */}
+      <div className="w-full relative min-h-[calc(100vh-5rem)] flex flex-col items-center justify-start pt-28 md:justify-center md:pt-0 pb-32 px-4 overflow-hidden bg-white">
         
-        {/* Fixed Background Image: Added bg-center and bg-no-repeat */}
+        {/* Fixed Background Image */}
         <div 
           className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
           style={bgImage ? { backgroundImage: `url('${bgImage}')` } : {}}
         />
+        
+        {/* The Seamless Bottom Fade into Pure White */}
+        <div className="absolute bottom-0 left-0 right-0 h-1/10 z-0 bg-gradient-to-t from-white to-transparent pointer-events-none" />
         
         <div className="relative z-10 w-full max-w-4xl flex flex-col items-center md:mt-8">
           <motion.div 
