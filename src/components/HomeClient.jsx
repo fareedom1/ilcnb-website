@@ -2,10 +2,17 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createClient } from '@supabase/supabase-js';
 import PrayerHUD from './PrayerHUD'; 
 
-export default function HomeClient({ initialBgImage, initialIqama }) {
-  const [timings, setTimings] = useState(null);
+// Initialize Supabase (Safe for browser using Anon key)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
+export default function HomeClient({ initialBgImage }) {
+  const [structuredPrayers, setStructuredPrayers] = useState([]);
   const [currentPrayer, setCurrentPrayer] = useState(null);
   const [loading, setLoading] = useState(true);
   
@@ -18,111 +25,6 @@ export default function HomeClient({ initialBgImage, initialIqama }) {
   const wrapperRef = useRef(null);
   const tableRef = useRef(null);
 
-  // Prayer Calculation Logic
-  useEffect(() => {
-    const fetchPrayers = async () => {
-      const dateStr = new Date().toISOString().split('T')[0];
-      const cacheKey = `prayerTimes_${dateStr}`;
-      const cached = localStorage.getItem(cacheKey);
-
-      if (cached) {
-        processTimings(JSON.parse(cached));
-      } else {
-        try {
-          const url = 'https://api.aladhan.com/v1/timingsByCity?city=Coconut%20Creek&country=United%20States&state=Florida&method=1&school=1';
-          const res = await fetch(url);
-          const data = await res.json();
-          localStorage.setItem(cacheKey, JSON.stringify(data.data.timings));
-          processTimings(data.data.timings);
-        } catch (error) {
-          console.error("Failed to fetch prayer times:", error);
-          processTimings({"Fajr":"05:30","Sunrise":"06:45","Dhuhr":"13:30","Asr":"17:00","Maghrib":"20:15","Isha":"21:30"});
-        }
-      }
-    };
-    fetchPrayers();
-  }, []);
-
-  const processTimings = (apiTimings) => {
-    const required = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-    const filtered = {};
-    required.forEach(p => filtered[p] = apiTimings[p]);
-    setTimings(filtered);
-
-    const now = new Date();
-    const nowMs = now.getTime();
-    
-    let current = null;
-    let nextEvt = null;
-
-    const getTimestamp = (time24, addDays = 0) => {
-      if (!time24) return null;
-      const [h, m] = time24.split(':').map(Number);
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
-      if (addDays !== 0) d.setDate(d.getDate() + addDays);
-      return d.getTime();
-    };
-
-    const prayerOrder = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-    
-    const structuredPrayers = prayerOrder.map(name => {
-      const adhanTime24 = filtered[name];
-      const iqamahTime24 = calculateIqama24(adhanTime24, name);
-      return {
-        name,
-        adhanTime24,
-        iqamahTime24,
-        adhan: format12H(adhanTime24),
-        iqamah: calculateIqama(adhanTime24, name)
-      };
-    });
-
-    for (let i = 0; i < structuredPrayers.length; i++) {
-      const p = structuredPrayers[i];
-      const adhanTs = getTimestamp(p.adhanTime24);
-      const iqamahTs = getTimestamp(p.iqamahTime24);
-      
-      if (nowMs < adhanTs) {
-        nextEvt = { ...p, type: 'adhan', targetTime: adhanTs };
-        current = i === 0 ? structuredPrayers[structuredPrayers.length - 1] : structuredPrayers[i - 1];
-        break;
-      } else if (iqamahTs && nowMs < iqamahTs) {
-        nextEvt = { ...p, type: 'iqamah', targetTime: iqamahTs };
-        current = p;
-        break;
-      }
-    }
-
-    if (!nextEvt) {
-       const fajr = structuredPrayers[0];
-       const tomorrowFajrTs = getTimestamp(fajr.adhanTime24, 1);
-       nextEvt = { ...fajr, type: 'adhan', targetTime: tomorrowFajrTs };
-       current = structuredPrayers[structuredPrayers.length - 1];
-    }
-    
-    setCurrentPrayer(current);
-    setUpcomingEvent(nextEvt);
-    setLoading(false);
-  };
-
-  const calculateIqama24 = (time24, prayerName) => {
-    const activeIqama = initialIqama || { fajr: '06:00', dhuhr: '13:45', asr: '18:30', isha: '21:45' };
-
-    switch (prayerName) {
-      case 'Fajr': return activeIqama.fajr;
-      case 'Dhuhr': return activeIqama.dhuhr;
-      case 'Asr': return activeIqama.asr;
-      case 'Maghrib': return time24;
-      case 'Isha': return activeIqama.isha;
-      default: return time24;
-    }
-  };
-
-  const calculateIqama = (time24, prayerName) => {
-    const time24Iqama = calculateIqama24(time24, prayerName);
-    return format12H(time24Iqama);
-  };
-
   const format12H = (time24) => {
     if (!time24) return '--:--';
     let [h, m] = time24.split(':').map(Number);
@@ -131,13 +33,100 @@ export default function HomeClient({ initialBgImage, initialIqama }) {
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   };
 
+  const getTimestamp = (time24, addDays = 0) => {
+    if (!time24) return null;
+    const now = new Date();
+    const [h, m] = time24.split(':').map(Number);
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+    if (addDays !== 0) d.setDate(d.getDate() + addDays);
+    return d.getTime();
+  };
+
   useEffect(() => {
-    if (loading) return;
+    const fetchPrayersFromDB = async () => {
+      try {
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const todayStr = today.toLocaleDateString('en-CA'); 
+        const tomorrowStr = tomorrow.toLocaleDateString('en-CA');
+
+        const { data, error } = await supabase
+          .from('prayer_times')
+          .select('*')
+          .in('date', [todayStr, tomorrowStr])
+          .order('date', { ascending: true });
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const todayData = data.find(row => row.date === todayStr) || data[0];
+          const tomorrowData = data.find(row => row.date === tomorrowStr) || data[0];
+
+          // Map Supabase data to the exact format your UI expects
+          const prayers = [
+            { name: 'Fajr', adhanTime24: todayData.fajr_adhan, iqamahTime24: todayData.fajr_iqama, adhan: format12H(todayData.fajr_adhan), iqamah: format12H(todayData.fajr_iqama) },
+            { name: 'Dhuhr', adhanTime24: todayData.dhuhr_adhan, iqamahTime24: todayData.dhuhr_iqama, adhan: format12H(todayData.dhuhr_adhan), iqamah: format12H(todayData.dhuhr_iqama) },
+            { name: 'Asr', adhanTime24: todayData.asr_adhan, iqamahTime24: todayData.asr_iqama, adhan: format12H(todayData.asr_adhan), iqamah: format12H(todayData.asr_iqama) },
+            { name: 'Maghrib', adhanTime24: todayData.maghrib_adhan, iqamahTime24: todayData.maghrib_iqama, adhan: format12H(todayData.maghrib_adhan), iqamah: format12H(todayData.maghrib_iqama) },
+            { name: 'Isha', adhanTime24: todayData.isha_adhan, iqamahTime24: todayData.isha_iqama, adhan: format12H(todayData.isha_adhan), iqamah: format12H(todayData.isha_iqama) },
+          ];
+
+          setStructuredPrayers(prayers);
+          calculateNextPrayer(prayers, tomorrowData);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Failed to fetch prayer times from Supabase:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchPrayersFromDB();
+  }, []);
+
+  const calculateNextPrayer = (prayers, tomorrowData) => {
+    const nowMs = new Date().getTime();
+    let current = null;
+    let nextEvt = null;
+
+    for (let i = 0; i < prayers.length; i++) {
+      const p = prayers[i];
+      const adhanTs = getTimestamp(p.adhanTime24);
+      const iqamahTs = getTimestamp(p.iqamahTime24);
+      
+      if (nowMs < adhanTs) {
+        nextEvt = { ...p, type: 'adhan', targetTime: adhanTs };
+        current = i === 0 ? prayers[prayers.length - 1] : prayers[i - 1];
+        break;
+      } else if (iqamahTs && nowMs < iqamahTs) {
+        nextEvt = { ...p, type: 'iqamah', targetTime: iqamahTs };
+        current = p;
+        break;
+      }
+    }
+
+    if (!nextEvt && tomorrowData) {
+       const fajr = prayers[0];
+       const tomorrowFajrTs = getTimestamp(tomorrowData.fajr_adhan, 1);
+       nextEvt = { ...fajr, type: 'adhan', targetTime: tomorrowFajrTs };
+       current = prayers[prayers.length - 1];
+    }
+    
+    setCurrentPrayer(current);
+    setUpcomingEvent(nextEvt);
+  };
+
+  // Timer interval to keep the HUD updated every second
+  useEffect(() => {
+    if (loading || structuredPrayers.length === 0) return;
     const interval = setInterval(() => {
-      if (timings) processTimings(timings);
+      // Re-run the HUD calculation every second to keep timers accurate
+      calculateNextPrayer(structuredPrayers, null); 
     }, 1000);
     return () => clearInterval(interval);
-  }, [loading, timings]);
+  }, [loading, structuredPrayers]);
 
   useEffect(() => {
     if (loading) return;
@@ -187,16 +176,12 @@ export default function HomeClient({ initialBgImage, initialIqama }) {
 
   return (
     <div className="w-full flex flex-col items-center pb-20">
-      {/* Notice bg-white at the very end of this line! */}
       <div className="w-full relative min-h-[calc(100vh-5rem)] flex flex-col items-center justify-start pt-28 md:justify-center md:pt-0 pb-32 px-4 overflow-hidden bg-white">
         
-        {/* Fixed Background Image */}
         <div 
           className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
           style={bgImage ? { backgroundImage: `url('${bgImage}')` } : {}}
         />
-        
-        {/* The Seamless Bottom Fade into Pure White */}
         <div className="absolute bottom-0 left-0 right-0 h-1/10 z-0 bg-gradient-to-t from-white to-transparent pointer-events-none" />
         
         <div className="relative z-10 w-full max-w-4xl flex flex-col items-center md:mt-8">
@@ -207,7 +192,7 @@ export default function HomeClient({ initialBgImage, initialIqama }) {
             className="text-center w-full flex flex-col items-center"
           >
            <h2 className="text-base sm:text-lg md:text-[32px] md:leading-tight font-semibold text-black italic px-6 py-3 mb-6 sm:mb-8 rounded-2xl bg-white/10 backdrop-blur-[2px] shadow-[0_0_20px_10px_rgba(255,255,255,0.1)]">
-            May the peace, mercy and blessings of Allah (God) be upon you
+           May the peace, mercy and blessings of Allah (God) be upon you
             </h2>
             <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-black leading-tight px-8 py-5 rounded-3xl bg-white/10 backdrop-blur-[2px] shadow-[0_0_30px_15px_rgba(255,255,255,0.1)]">
               السلام عليكم ورحمة الله وبركاته
@@ -253,15 +238,13 @@ export default function HomeClient({ initialBgImage, initialIqama }) {
                     </tr>
                   </thead>
                   <tbody className="text-stone-800 bg-white">
-                    {timings && Object.entries(timings)
-                      .filter(([prayer]) => prayer !== 'Sunrise')
-                      .map(([prayer, time]) => {
-                      const isNext = upcomingEvent?.name === prayer;
-                      const isCurrent = currentPrayer?.name === prayer;
+                    {structuredPrayers.map((prayer) => {
+                      const isNext = upcomingEvent?.name === prayer.name;
+                      const isCurrent = currentPrayer?.name === prayer.name;
 
                       return (
                         <tr 
-                          key={prayer} 
+                          key={prayer.name} 
                           className={`border-b border-emerald-100/50 transition-colors bg-white hover:bg-emerald-50 ${
                             isNext ? 'bg-emerald-50/80 border-l-4 border-l-emerald-500' : ''
                           } ${
@@ -270,16 +253,16 @@ export default function HomeClient({ initialBgImage, initialIqama }) {
                         >
                           <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                             <div className="flex items-center font-bold text-base sm:text-lg">
-                              <span>{prayer}</span>
+                              <span>{prayer.name}</span>
                               {isNext && <span className="ml-2 sm:ml-3 text-[8px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-white px-2 py-0.5 sm:py-1 rounded-full shadow-sm">Next</span>}
                               {isCurrent && <span className="ml-2 sm:ml-3 text-[8px] sm:text-[10px] font-black uppercase tracking-wider bg-stone-200 text-stone-600 px-2 py-0.5 sm:py-1 rounded-full">Current</span>}
                             </div>
                           </td>
                           <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-sm sm:text-base text-stone-700 whitespace-nowrap">
-                            {format12H(time)}
+                            {prayer.adhan}
                           </td>
                           <td className="px-3 sm:px-6 py-3 sm:py-4 font-bold text-sm sm:text-base text-emerald-700 whitespace-nowrap">
-                            {calculateIqama(time, prayer)}
+                            {prayer.iqamah}
                           </td>
                         </tr>
                       );
