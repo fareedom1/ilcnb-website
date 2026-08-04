@@ -52,25 +52,43 @@ export default function HomeClient({ initialBgImage }) {
         const todayStr = today.toLocaleDateString('en-CA'); 
         const tomorrowStr = tomorrow.toLocaleDateString('en-CA');
 
-        const { data, error } = await supabase
+        // 1. Fetch the Adhan times for today and tomorrow
+        const { data: adhanData, error: adhanError } = await supabase
           .from('prayer_times')
           .select('*')
           .in('date', [todayStr, tomorrowStr])
           .order('date', { ascending: true });
 
-        if (error) throw error;
+        if (adhanError) throw adhanError;
 
-        if (data && data.length > 0) {
-          const todayData = data.find(row => row.date === todayStr) || data[0];
-          const tomorrowData = data.find(row => row.date === tomorrowStr) || data[0];
+        // 2. Fetch the currently ACTIVE Iqama schedule from the Admin table
+        // (Gets the most recent schedule where the effective date is today or in the past)
+        const { data: iqamaData, error: iqamaError } = await supabase
+          .from('iqama_schedule')
+          .select('*')
+          .lte('effective_date', todayStr)
+          .order('effective_date', { ascending: false })
+          .limit(1);
 
-          // Map Supabase data to the exact format your UI expects
+        if (iqamaError) throw iqamaError;
+
+        if (adhanData && adhanData.length > 0) {
+          const todayData = adhanData.find(row => row.date === todayStr) || adhanData[0];
+          const tomorrowData = adhanData.find(row => row.date === tomorrowStr) || adhanData[0];
+          
+          // Fallback Iqama times just in case the Admin table is empty
+          const activeIqama = iqamaData && iqamaData.length > 0 
+            ? iqamaData[0] 
+            : { fajr: '06:00', dhuhr: '13:45', asr: '18:30', isha: '21:45' };
+
+          // 3. Merge them together! Adhan comes from the API table, Iqama comes from the Admin table.
+          // Notice Maghrib: It ignores the Admin table and just copies its own Adhan time.
           const prayers = [
-            { name: 'Fajr', adhanTime24: todayData.fajr_adhan, iqamahTime24: todayData.fajr_iqama, adhan: format12H(todayData.fajr_adhan), iqamah: format12H(todayData.fajr_iqama) },
-            { name: 'Dhuhr', adhanTime24: todayData.dhuhr_adhan, iqamahTime24: todayData.dhuhr_iqama, adhan: format12H(todayData.dhuhr_adhan), iqamah: format12H(todayData.dhuhr_iqama) },
-            { name: 'Asr', adhanTime24: todayData.asr_adhan, iqamahTime24: todayData.asr_iqama, adhan: format12H(todayData.asr_adhan), iqamah: format12H(todayData.asr_iqama) },
-            { name: 'Maghrib', adhanTime24: todayData.maghrib_adhan, iqamahTime24: todayData.maghrib_iqama, adhan: format12H(todayData.maghrib_adhan), iqamah: format12H(todayData.maghrib_iqama) },
-            { name: 'Isha', adhanTime24: todayData.isha_adhan, iqamahTime24: todayData.isha_iqama, adhan: format12H(todayData.isha_adhan), iqamah: format12H(todayData.isha_iqama) },
+            { name: 'Fajr', adhanTime24: todayData.fajr_adhan, iqamahTime24: activeIqama.fajr, adhan: format12H(todayData.fajr_adhan), iqamah: format12H(activeIqama.fajr) },
+            { name: 'Dhuhr', adhanTime24: todayData.dhuhr_adhan, iqamahTime24: activeIqama.dhuhr, adhan: format12H(todayData.dhuhr_adhan), iqamah: format12H(activeIqama.dhuhr) },
+            { name: 'Asr', adhanTime24: todayData.asr_adhan, iqamahTime24: activeIqama.asr, adhan: format12H(todayData.asr_adhan), iqamah: format12H(activeIqama.asr) },
+            { name: 'Maghrib', adhanTime24: todayData.maghrib_adhan, iqamahTime24: todayData.maghrib_adhan, adhan: format12H(todayData.maghrib_adhan), iqamah: format12H(todayData.maghrib_adhan) },
+            { name: 'Isha', adhanTime24: todayData.isha_adhan, iqamahTime24: activeIqama.isha, adhan: format12H(todayData.isha_adhan), iqamah: format12H(activeIqama.isha) },
           ];
 
           setStructuredPrayers(prayers);
