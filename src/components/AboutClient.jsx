@@ -6,7 +6,7 @@ import { MapPin, Send } from 'lucide-react';
 
 export default function AboutClient({ initialBgImage }) {
   const leaders = [
-    { name: "Imam Bismil", role: "Imam", phone: "(555) 123-4567" },
+    { name: "Imam Bismil", role: "Imam", phone: "(954) 235-8186" },
     { name: "Syed Sharafat Ali", role: "President", phone: "(954) 247-4234" },
     { name: "Babar Shahzad", role: "Vice President" },
     { name: "Nadeem Akhter", role: "Vice President" },
