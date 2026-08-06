@@ -5,6 +5,9 @@ import { motion } from 'framer-motion';
 import { Lock, Upload, ImageIcon, Clock, Image as LucideImage, Loader2, LogOut, Trash2, Calendar, CheckCircle2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
+// Import the Server Action to securely verify the password on the backend
+import { verifyAdminPassword } from '../actions/auth';
+
 // Initialize Supabase Client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -14,6 +17,7 @@ export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [error, setError] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
   const [activeTab, setActiveTab] = useState("gallery");
   
   // Gallery States
@@ -42,15 +46,26 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated, activeTab]);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (passwordInput === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem("ilcnb_admin_auth", "true");
-      setError("");
-    } else {
-      setError("Incorrect password");
-      setPasswordInput("");
+    setIsVerifying(true);
+    setError("");
+
+    try {
+      const response = await verifyAdminPassword(passwordInput);
+
+      if (response.success) {
+        setIsAuthenticated(true);
+        sessionStorage.setItem("ilcnb_admin_auth", "true");
+        setError("");
+      } else {
+        setError(response.error);
+        setPasswordInput("");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred.");
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -87,7 +102,7 @@ export default function AdminDashboard() {
       if (dbError) throw dbError;
       
       alert('Image successfully added to the public gallery!');
-      fetchGalleryImages(); // Refresh the list instantly after upload
+      fetchGalleryImages();
     } catch (error) {
       console.error('Upload failed:', error.message);
       alert('Failed to upload image.');
@@ -101,7 +116,6 @@ export default function AdminDashboard() {
     
     try {
       const fileName = imageUrl.split('?')[0].split('/').pop();
-      
       const { error: storageError } = await supabase.storage.from('gallery').remove([fileName]);
       if (storageError) console.error("Storage deletion error:", storageError);
       
@@ -113,7 +127,6 @@ export default function AdminDashboard() {
       alert("Failed to delete image: " + error.message);
     }
   };
-
 
   // --- IQAMA SCHEDULER LOGIC ---
   const fetchIqamaSchedules = async () => {
@@ -130,7 +143,6 @@ export default function AdminDashboard() {
     }
     
     setIqamaSchedules(data);
-    
     const today = new Date().toISOString().split('T')[0];
     const active = data.find(s => s.effective_date <= today);
     
@@ -142,7 +154,6 @@ export default function AdminDashboard() {
 
   const handleUpdateCurrentIqama = async () => {
     const today = new Date().toISOString().split('T')[0];
-    
     try {
       if (currentIqama.id) {
         await supabase.from('iqama_schedule').update({
@@ -199,15 +210,29 @@ export default function AdminDashboard() {
   // --- LOGIN SCREEN ---
   if (!isAuthenticated) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full border border-stone-100 text-center">
           <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6"><Lock size={32} /></div>
           <h2 className="text-2xl font-bold text-stone-900 mb-2">Admin Portal</h2>
           <p className="text-stone-500 mb-8">Enter the master password to continue.</p>
           <form onSubmit={handleLogin} className="space-y-4">
-            <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="Password" className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-stone-50 cursor-text" />
+            <input 
+              type="password" 
+              value={passwordInput} 
+              onChange={(e) => setPasswordInput(e.target.value)} 
+              placeholder="Password" 
+              disabled={isVerifying}
+              className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-stone-50 cursor-text disabled:opacity-50" 
+            />
             {error && <p className="text-red-500 text-sm">{error}</p>}
-            <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors cursor-pointer">Unlock Dashboard</button>
+            <button 
+              type="submit" 
+              disabled={isVerifying}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold py-3 rounded-xl transition-colors cursor-pointer flex justify-center items-center"
+            >
+              {isVerifying ? <Loader2 className="animate-spin mr-2" size={20} /> : null}
+              {isVerifying ? 'Verifying...' : 'Unlock Dashboard'}
+            </button>
           </form>
         </motion.div>
       </div>
@@ -216,10 +241,11 @@ export default function AdminDashboard() {
 
   // --- ADMIN DASHBOARD ---
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12 min-h-screen">
+    // This wrapper forces the entire dashboard to fit within the viewport height, preventing page scrolling
+    <div className="max-w-6xl mx-auto px-4 py-8 md:h-[calc(100vh-5rem)] md:min-h-[700px] flex flex-col">
       
-      {/* Dashboard Header */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-10 pb-6 border-b border-stone-200 cursor-default">
+      {/* Dashboard Header - Frozen at the top */}
+      <div className="flex-shrink-0 flex flex-col md:flex-row justify-between items-center mb-8 pb-6 border-b border-stone-200 cursor-default">
         <div>
           <h1 className="text-3xl font-extrabold text-stone-900">Admin Dashboard</h1>
           <p className="text-stone-500 mt-1">Manage website content and settings</p>
@@ -229,10 +255,11 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8">
+      {/* Grid Layout - min-h-0 is the magic CSS that forces inner scrolling */}
+      <div className="flex flex-col md:flex-row gap-8 flex-1 min-h-0 pb-8">
         
-        {/* Sidebar Menu */}
-        <div className="w-full md:w-64 flex flex-col space-y-2">
+        {/* Sidebar Menu - Frozen on the left */}
+        <div className="w-full md:w-64 flex-shrink-0 flex flex-col space-y-2">
           <button onClick={() => setActiveTab("gallery")} className={`flex items-center px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer ${activeTab === "gallery" ? "bg-emerald-600 text-white shadow-md" : "text-stone-600 hover:bg-stone-100"}`}>
             <ImageIcon size={20} className="mr-3" /> Gallery
           </button>
@@ -244,14 +271,13 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-stone-100">
+        {/* Main Content Area - Inner Scroll active via overflow-y-auto */}
+        <div className="flex-1 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-stone-100 md:overflow-y-auto">
           
           {/* GALLERY TAB */}
           {activeTab === "gallery" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
               
-              {/* Upload Section */}
               <div>
                 <h2 className="text-2xl font-bold text-stone-900 mb-6 cursor-default">Gallery Management</h2>
                 <div className="bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl p-10 flex flex-col items-center justify-center text-center cursor-default">
@@ -268,30 +294,19 @@ export default function AdminDashboard() {
 
               <hr className="border-stone-100" />
 
-              {/* Manage Existing Images Grid */}
               <div>
                 <h3 className="text-xl font-bold text-stone-900 mb-4 cursor-default">Existing Gallery Images</h3>
-                
                 {isFetchingGallery ? (
                   <div className="flex justify-center py-8"><Loader2 className="animate-spin text-emerald-600" /></div>
                 ) : galleryImages.length === 0 ? (
                   <p className="text-stone-500 bg-stone-50 p-6 rounded-xl border border-stone-200 text-center cursor-default">No images in the gallery yet.</p>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {galleryImages.map((img, idx) => (
                       <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-stone-200 group bg-stone-100">
-                        <img 
-                          src={img.image_url} 
-                          alt="Gallery item" 
-                          className="w-full h-full object-cover" 
-                        />
-                        {/* Hover Overlay with Delete Button */}
+                        <img src={img.image_url} alt="Gallery item" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-stone-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                          <button 
-                            onClick={() => handleDeleteGalleryImage(img.image_url)}
-                            className="bg-red-500 hover:bg-red-600 text-white p-3 rounded-full transform hover:scale-110 transition-all cursor-pointer shadow-lg"
-                            title="Delete Image"
-                          >
+                          <button onClick={() => handleDeleteGalleryImage(img.image_url)} className="bg-red-500 hover:bg-red-600 text-white p-3 rounded-full transform hover:scale-110 transition-all cursor-pointer shadow-lg" title="Delete Image">
                             <Trash2 size={20} />
                           </button>
                         </div>
@@ -308,7 +323,6 @@ export default function AdminDashboard() {
           {activeTab === "iqama" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
               
-              {/* Section 1: Editable Current Times */}
               <div>
                 <h2 className="text-2xl font-bold text-stone-900 mb-4 cursor-default">Currently Active Iqama Times</h2>
                 <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6">
@@ -317,7 +331,7 @@ export default function AdminDashboard() {
                   {isFetchingIqama ? (
                     <div className="flex justify-center py-4"><Loader2 className="animate-spin text-emerald-600" /></div>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                       {['fajr', 'dhuhr', 'asr', 'isha'].map((prayer) => (
                         <div key={prayer} className="flex flex-col">
                           <label className="text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1 cursor-default">{prayer}</label>
@@ -332,10 +346,7 @@ export default function AdminDashboard() {
                     </div>
                   )}
                   
-                  <button 
-                    onClick={handleUpdateCurrentIqama}
-                    className="flex items-center px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors shadow-sm cursor-pointer"
-                  >
+                  <button onClick={handleUpdateCurrentIqama} className="flex items-center px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors shadow-sm cursor-pointer">
                     <CheckCircle2 size={18} className="mr-2" /> Save Current Times
                   </button>
                 </div>
@@ -343,18 +354,16 @@ export default function AdminDashboard() {
 
               <hr className="border-stone-100" />
 
-              {/* Section 2: Schedule Future Changes */}
               <div>
                 <h2 className="text-2xl font-bold text-stone-900 mb-4 cursor-default">Schedule Future Change</h2>
                 <div className="bg-stone-50 border border-stone-200 rounded-2xl p-6">
-                  {/* Added key={JSON.stringify(currentIqama)} so the form completely refreshes with the newest times from the database! */}
                   <form key={JSON.stringify(currentIqama)} onSubmit={handleScheduleFutureIqama} className="space-y-6">
                     <div>
                       <label className="block text-sm font-bold text-stone-700 mb-2 cursor-default">When should these times take effect?</label>
-                      <input type="date" name="date" required min={todayStr} className="w-full md:w-64 px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-stone-200 focus:border-stone-400 bg-white cursor-pointer hover:bg-stone-100" />
+                      <input type="date" name="date" required min={todayStr} className="w-full lg:w-64 px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-stone-200 focus:border-stone-400 bg-white cursor-pointer hover:bg-stone-100" />
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                       {['fajr', 'dhuhr', 'asr', 'isha'].map((prayer) => (
                         <div key={prayer}>
                           <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1 cursor-default">{prayer}</label>
@@ -370,31 +379,26 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Section 3: Upcoming Schedules List */}
               {futureSchedules.length > 0 && (
                 <div>
                   <h2 className="text-xl font-bold text-stone-900 mb-4 cursor-default">Upcoming Schedules</h2>
                   <div className="space-y-3">
                     {futureSchedules.map((schedule) => (
-                      <div key={schedule.id} className="bg-white border border-stone-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm cursor-default">
+                      <div key={schedule.id} className="bg-white border border-stone-200 rounded-xl p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4 shadow-sm cursor-default">
                         <div className="flex-shrink-0">
                           <span className="inline-block px-3 py-1 bg-stone-100 text-stone-800 text-sm font-bold rounded-lg border border-stone-200">
                             {new Date(schedule.effective_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
                           </span>
                         </div>
                         
-                        <div className="flex flex-wrap gap-4 text-sm flex-1 md:justify-center">
+                        <div className="flex flex-wrap gap-4 text-sm flex-1 xl:justify-center">
                           <span className="font-medium text-stone-600">Fajr: <strong className="text-stone-900">{schedule.fajr}</strong></span>
                           <span className="font-medium text-stone-600">Dhuhr: <strong className="text-stone-900">{schedule.dhuhr}</strong></span>
                           <span className="font-medium text-stone-600">Asr: <strong className="text-stone-900">{schedule.asr}</strong></span>
                           <span className="font-medium text-stone-600">Isha: <strong className="text-stone-900">{schedule.isha}</strong></span>
                         </div>
 
-                        <button 
-                          onClick={() => handleDeleteSchedule(schedule.id)}
-                          className="flex-shrink-0 text-stone-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50 cursor-pointer"
-                          title="Delete Scheduled Change"
-                        >
+                        <button onClick={() => handleDeleteSchedule(schedule.id)} className="flex-shrink-0 text-stone-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50 cursor-pointer" title="Delete Scheduled Change">
                           <Trash2 size={20} />
                         </button>
                       </div>
@@ -417,12 +421,12 @@ export default function AdminDashboard() {
                   { id: 'events_main', title: 'Events Page Image', desc: 'The community gathering photo on the events page.' },
                   { id: 'about_mission', title: 'About Page Image', desc: 'The mission statement photo (currently the Quran).' }
                 ].map((imgSection) => (
-                  <div key={imgSection.id} className="bg-stone-50 border border-stone-200 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 cursor-default">
+                  <div key={imgSection.id} className="bg-stone-50 border border-stone-200 rounded-2xl p-6 flex flex-col xl:flex-row xl:items-center justify-between gap-6 cursor-default">
                     <div>
                       <h3 className="text-lg font-bold text-stone-900">{imgSection.title}</h3>
                       <p className="text-sm text-stone-500">{imgSection.desc}</p>
                     </div>
-                    <label className="cursor-pointer flex-shrink-0 px-6 py-3 bg-white border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 font-bold rounded-xl transition-colors shadow-sm flex items-center">
+                    <label className="cursor-pointer flex-shrink-0 px-6 py-3 bg-white border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 font-bold rounded-xl transition-colors shadow-sm flex items-center w-max">
                       <Upload size={18} className="mr-2" />
                       Upload New Image
                       <input 
