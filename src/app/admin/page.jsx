@@ -324,14 +324,14 @@ export default function AdminDashboard() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
               
               <div>
-                <h2 className="text-2xl font-bold text-stone-900 mb-4 cursor-default">Currently Active Iqama Times</h2>
+                <h2 className="text-2xl font-bold text-stone-900 mb-4 cursor-default">Instant Time Change</h2>
                 <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6">
                   <p className="text-sm text-emerald-800 mb-6 cursor-default">These are the times currently showing on the website. Click inside a box to edit a time directly.</p>
                   
                   {isFetchingIqama ? (
                     <div className="flex justify-center py-4"><Loader2 className="animate-spin text-emerald-600" /></div>
                   ) : (
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-6">
                       {['fajr', 'dhuhr', 'asr', 'isha'].map((prayer) => (
                         <div key={prayer} className="flex flex-col">
                           <label className="text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1 cursor-default">{prayer}</label>
@@ -339,7 +339,7 @@ export default function AdminDashboard() {
                             type="time" 
                             value={currentIqama[prayer]} 
                             onChange={(e) => setCurrentIqama({...currentIqama, [prayer]: e.target.value})}
-                            className="w-full px-3 py-2 text-lg font-bold rounded-xl border border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 bg-white transition-all cursor-pointer hover:bg-stone-50"
+                            className="w-full px-1 sm:px-3 py-2 text-sm sm:text-lg font-bold rounded-lg sm:rounded-xl border border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 bg-white transition-all cursor-pointer hover:bg-stone-50"
                           />
                         </div>
                       ))}
@@ -355,19 +355,19 @@ export default function AdminDashboard() {
               <hr className="border-stone-100" />
 
               <div>
-                <h2 className="text-2xl font-bold text-stone-900 mb-4 cursor-default">Schedule Future Change</h2>
+                <h2 className="text-2xl font-bold text-stone-900 mb-4 cursor-default">Schedule Time Change</h2>
                 <div className="bg-stone-50 border border-stone-200 rounded-2xl p-6">
                   <form key={JSON.stringify(currentIqama)} onSubmit={handleScheduleFutureIqama} className="space-y-6">
                     <div>
                       <label className="block text-sm font-bold text-stone-700 mb-2 cursor-default">When should these times take effect?</label>
-                      <input type="date" name="date" required min={todayStr} className="w-full lg:w-64 px-4 py-3 rounded-xl border border-stone-200 focus:ring-2 focus:ring-stone-200 focus:border-stone-400 bg-white cursor-pointer hover:bg-stone-100" />
+                      <input type="date" name="date" required min={todayStr} className="w-full lg:w-64 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base rounded-xl border border-stone-200 focus:ring-2 focus:ring-stone-200 focus:border-stone-400 bg-white cursor-pointer hover:bg-stone-100" />
                     </div>
 
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
                       {['fajr', 'dhuhr', 'asr', 'isha'].map((prayer) => (
                         <div key={prayer}>
                           <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1 cursor-default">{prayer}</label>
-                          <input type="time" name={prayer} required defaultValue={currentIqama[prayer]} className="w-full px-3 py-2 rounded-xl border border-stone-200 bg-white cursor-pointer hover:bg-stone-100" />
+                          <input type="time" name={prayer} required defaultValue={currentIqama[prayer]} className="w-full px-1 sm:px-3 py-2 text-sm sm:text-lg font-bold rounded-lg sm:rounded-xl border border-stone-200 bg-white cursor-pointer hover:bg-stone-100" />
                         </div>
                       ))}
                     </div>
