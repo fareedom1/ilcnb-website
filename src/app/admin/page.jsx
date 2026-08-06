@@ -241,10 +241,9 @@ export default function AdminDashboard() {
 
   // --- ADMIN DASHBOARD ---
   return (
-    // This wrapper forces the entire dashboard to fit within the viewport height, preventing page scrolling
     <div className="max-w-6xl mx-auto px-4 py-8 md:h-[calc(100vh-5rem)] md:min-h-[700px] flex flex-col">
       
-      {/* Dashboard Header - Frozen at the top */}
+      {/* Dashboard Header */}
       <div className="flex-shrink-0 flex flex-col md:flex-row justify-between items-center mb-8 pb-6 border-b border-stone-200 cursor-default">
         <div>
           <h1 className="text-3xl font-extrabold text-stone-900">Admin Dashboard</h1>
@@ -255,10 +254,9 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* Grid Layout - min-h-0 is the magic CSS that forces inner scrolling */}
       <div className="flex flex-col md:flex-row gap-8 flex-1 min-h-0 pb-8">
         
-        {/* Sidebar Menu - Frozen on the left */}
+        {/* Sidebar Menu */}
         <div className="w-full md:w-64 flex-shrink-0 flex flex-col space-y-2">
           <button onClick={() => setActiveTab("gallery")} className={`flex items-center px-4 py-3 rounded-xl font-medium transition-colors cursor-pointer ${activeTab === "gallery" ? "bg-emerald-600 text-white shadow-md" : "text-stone-600 hover:bg-stone-100"}`}>
             <ImageIcon size={20} className="mr-3" /> Gallery
@@ -271,13 +269,12 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* Main Content Area - Inner Scroll active via overflow-y-auto */}
+        {/* Main Content Area */}
         <div className="flex-1 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-stone-100 md:overflow-y-auto">
           
           {/* GALLERY TAB */}
           {activeTab === "gallery" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
-              
               <div>
                 <h2 className="text-2xl font-bold text-stone-900 mb-6 cursor-default">Gallery Management</h2>
                 <div className="bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl p-10 flex flex-col items-center justify-center text-center cursor-default">
@@ -291,9 +288,7 @@ export default function AdminDashboard() {
                   </label>
                 </div>
               </div>
-
               <hr className="border-stone-100" />
-
               <div>
                 <h3 className="text-xl font-bold text-stone-900 mb-4 cursor-default">Existing Gallery Images</h3>
                 {isFetchingGallery ? (
@@ -315,7 +310,6 @@ export default function AdminDashboard() {
                   </div>
                 )}
               </div>
-
             </motion.div>
           )}
 
@@ -324,14 +318,14 @@ export default function AdminDashboard() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
               
               <div>
-                <h2 className="text-2xl font-bold text-stone-900 mb-4 cursor-default">Instant Time Change</h2>
+                <h2 className="text-2xl font-bold text-stone-900 mb-4 cursor-default">Currently Active Iqama Times</h2>
                 <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6">
                   <p className="text-sm text-emerald-800 mb-6 cursor-default">These are the times currently showing on the website. Click inside a box to edit a time directly.</p>
                   
                   {isFetchingIqama ? (
                     <div className="flex justify-center py-4"><Loader2 className="animate-spin text-emerald-600" /></div>
                   ) : (
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                       {['fajr', 'dhuhr', 'asr', 'isha'].map((prayer) => (
                         <div key={prayer} className="flex flex-col">
                           <label className="text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1 cursor-default">{prayer}</label>
@@ -339,7 +333,7 @@ export default function AdminDashboard() {
                             type="time" 
                             value={currentIqama[prayer]} 
                             onChange={(e) => setCurrentIqama({...currentIqama, [prayer]: e.target.value})}
-                            className="w-full px-1 sm:px-3 py-2 text-sm sm:text-lg font-bold rounded-lg sm:rounded-xl border border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 bg-white transition-all cursor-pointer hover:bg-stone-50"
+                            className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-lg font-bold rounded-lg sm:rounded-xl border border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 bg-white transition-all cursor-pointer hover:bg-stone-50"
                           />
                         </div>
                       ))}
@@ -355,19 +349,31 @@ export default function AdminDashboard() {
               <hr className="border-stone-100" />
 
               <div>
-                <h2 className="text-2xl font-bold text-stone-900 mb-4 cursor-default">Schedule Time Change</h2>
+                <h2 className="text-2xl font-bold text-stone-900 mb-4 cursor-default">Schedule Future Change</h2>
                 <div className="bg-stone-50 border border-stone-200 rounded-2xl p-6">
                   <form key={JSON.stringify(currentIqama)} onSubmit={handleScheduleFutureIqama} className="space-y-6">
                     <div>
                       <label className="block text-sm font-bold text-stone-700 mb-2 cursor-default">When should these times take effect?</label>
-                      <input type="date" name="date" required min={todayStr} className="w-full lg:w-64 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base rounded-xl border border-stone-200 focus:ring-2 focus:ring-stone-200 focus:border-stone-400 bg-white cursor-pointer hover:bg-stone-100" />
+                      <input 
+                        type="date" 
+                        name="date" 
+                        required 
+                        min={todayStr} 
+                        className="w-full max-w-[180px] lg:max-w-none lg:w-64 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border border-stone-200 focus:ring-2 focus:ring-stone-200 focus:border-stone-400 bg-white cursor-pointer hover:bg-stone-100" 
+                      />
                     </div>
 
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                       {['fajr', 'dhuhr', 'asr', 'isha'].map((prayer) => (
                         <div key={prayer}>
                           <label className="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1 cursor-default">{prayer}</label>
-                          <input type="time" name={prayer} required defaultValue={currentIqama[prayer]} className="w-full px-1 sm:px-3 py-2 text-sm sm:text-lg font-bold rounded-lg sm:rounded-xl border border-stone-200 bg-white cursor-pointer hover:bg-stone-100" />
+                          <input 
+                            type="time" 
+                            name={prayer} 
+                            required 
+                            defaultValue={currentIqama[prayer]} 
+                            className="w-full px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-lg font-bold rounded-lg sm:rounded-xl border border-stone-200 bg-white cursor-pointer hover:bg-stone-100" 
+                          />
                         </div>
                       ))}
                     </div>
