@@ -305,7 +305,7 @@ export default function HomeClient({ initialBgImage }) {
             </div>
             <div className="bg-emerald-50 px-5 py-2 rounded-2xl shadow-sm border border-emerald-100 text-center w-full sm:w-auto">
               <span className="block text-[10px] sm:text-xs text-black font-semibold uppercase tracking-widest mb-0.5">Friday</span>
-              <span className="block text-xl font-black text-emerald-700">1:40 PM</span>
+              <span className="block text-xl font-black text-emerald-700">1:45 PM</span>
             </div>
           </div>
 

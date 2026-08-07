@@ -6,7 +6,7 @@ import { Calendar, Clock, Users, BookOpen, Heart, Send } from 'lucide-react';
 
 export default function EventsClient({ initialBgImage }) {
   const events = [
-    { title: "Jummah Prayer", category: "General", date: "Every Friday", time: "1:40 PM", description: "Weekly congregational prayer and khutbah. Please arrive early as space fills up quickly.", icon: Users },
+    { title: "Jummah Khutbah & Prayer", category: "General", date: "Every Friday", time: "1:45 PM", description: "Weekly congregational prayer and khutbah. Please arrive early as space fills up quickly.", icon: Users },
     { title: "Isha Prayer Lecture", category: "Learning", date: "Every Day", time: "After Isha", description: "Daily short lecture and reflection after Isha prayer.", icon: BookOpen },
     { title: "Ramadan Iftar", category: "Community", date: "Saturday & Sunday", time: "Maghrib", description: "Join us for community Iftar during the blessed month of Ramadan.", icon: Heart }
   ];
