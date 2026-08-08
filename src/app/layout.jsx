@@ -13,8 +13,8 @@ const germaniaOne = Germania_One({ weight: '400', subsets: ['latin'], variable: 
 const activeFont = inter; // Change to `montserrat` to test it out
 
 export const metadata = {
-  title: 'ILCNB - Islamic Learning Center of North Broward',
-  description: 'Islamic Learning Center of North Broward. A welcoming place of worship, community growth, and learning.',
+  title: 'Islamic Learning Center of North Broward',
+  description: 'May peace, mercy, and blessings of Allah be upon you.',
 };
 
 export default function RootLayout({ children }) {
