@@ -1,4 +1,4 @@
-# ILCNB End to End Website
+# ILCNB End-to-End Site
 
 **Live Site:** [ilcnb.org](https://ilcnb.org)
 
