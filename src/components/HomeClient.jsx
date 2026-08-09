@@ -13,8 +13,8 @@ const supabase = createClient(
 
 export default function HomeClient({ initialBgImage }) {
   const [structuredPrayers, setStructuredPrayers] = useState([]);
-  const [currentPrayer, setCurrentPrayer] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isTomorrow, setIsTomorrow] = useState(false); // Tracks if we should show tomorrow's times
   
   const [bgImage, setBgImage] = useState(initialBgImage);
   
@@ -24,6 +24,8 @@ export default function HomeClient({ initialBgImage }) {
   const hudRef = useRef(null);
   const wrapperRef = useRef(null);
   const tableRef = useRef(null);
+  
+  const [rawDbData, setRawDbData] = useState(null); // Stores DB results to avoid re-fetching
 
   const format12H = (time24) => {
     if (!time24) return '--:--';
@@ -42,6 +44,17 @@ export default function HomeClient({ initialBgImage }) {
     return d.getTime();
   };
 
+  const buildPrayers = (dayData, iqamaData) => {
+    return [
+      { name: 'Fajr', adhanTime24: dayData.fajr_adhan, iqamahTime24: iqamaData.fajr, adhan: format12H(dayData.fajr_adhan), iqamah: format12H(iqamaData.fajr) },
+      { name: 'Dhuhr', adhanTime24: dayData.dhuhr_adhan, iqamahTime24: iqamaData.dhuhr, adhan: format12H(dayData.dhuhr_adhan), iqamah: format12H(iqamaData.dhuhr) },
+      { name: 'Asr', adhanTime24: dayData.asr_adhan, iqamahTime24: iqamaData.asr, adhan: format12H(dayData.asr_adhan), iqamah: format12H(iqamaData.asr) },
+      { name: 'Maghrib', adhanTime24: dayData.maghrib_adhan, iqamahTime24: dayData.maghrib_adhan, adhan: format12H(dayData.maghrib_adhan), iqamah: format12H(dayData.maghrib_adhan) },
+      { name: 'Isha', adhanTime24: dayData.isha_adhan, iqamahTime24: iqamaData.isha, adhan: format12H(dayData.isha_adhan), iqamah: format12H(iqamaData.isha) },
+    ];
+  };
+
+  // 1. Fetch raw data from Supabase once on mount
   useEffect(() => {
     const fetchPrayersFromDB = async () => {
       try {
@@ -52,7 +65,6 @@ export default function HomeClient({ initialBgImage }) {
         const todayStr = today.toLocaleDateString('en-CA'); 
         const tomorrowStr = tomorrow.toLocaleDateString('en-CA');
 
-        // 1. Fetch the Adhan times for today and tomorrow
         const { data: adhanData, error: adhanError } = await supabase
           .from('prayer_times')
           .select('*')
@@ -61,8 +73,6 @@ export default function HomeClient({ initialBgImage }) {
 
         if (adhanError) throw adhanError;
 
-        // 2. Fetch the currently ACTIVE Iqama schedule from the Admin table
-        // (Gets the most recent schedule where the effective date is today or in the past)
         const { data: iqamaData, error: iqamaError } = await supabase
           .from('iqama_schedule')
           .select('*')
@@ -76,23 +86,11 @@ export default function HomeClient({ initialBgImage }) {
           const todayData = adhanData.find(row => row.date === todayStr) || adhanData[0];
           const tomorrowData = adhanData.find(row => row.date === tomorrowStr) || adhanData[0];
           
-          // Fallback Iqama times just in case the Admin table is empty
           const activeIqama = iqamaData && iqamaData.length > 0 
             ? iqamaData[0] 
             : { fajr: '06:00', dhuhr: '13:45', asr: '18:30', isha: '21:45' };
 
-          // 3. Merge them together! Adhan comes from the API table, Iqama comes from the Admin table.
-          // Notice Maghrib: It ignores the Admin table and just copies its own Adhan time.
-          const prayers = [
-            { name: 'Fajr', adhanTime24: todayData.fajr_adhan, iqamahTime24: activeIqama.fajr, adhan: format12H(todayData.fajr_adhan), iqamah: format12H(activeIqama.fajr) },
-            { name: 'Dhuhr', adhanTime24: todayData.dhuhr_adhan, iqamahTime24: activeIqama.dhuhr, adhan: format12H(todayData.dhuhr_adhan), iqamah: format12H(activeIqama.dhuhr) },
-            { name: 'Asr', adhanTime24: todayData.asr_adhan, iqamahTime24: activeIqama.asr, adhan: format12H(todayData.asr_adhan), iqamah: format12H(activeIqama.asr) },
-            { name: 'Maghrib', adhanTime24: todayData.maghrib_adhan, iqamahTime24: todayData.maghrib_adhan, adhan: format12H(todayData.maghrib_adhan), iqamah: format12H(todayData.maghrib_adhan) },
-            { name: 'Isha', adhanTime24: todayData.isha_adhan, iqamahTime24: activeIqama.isha, adhan: format12H(todayData.isha_adhan), iqamah: format12H(activeIqama.isha) },
-          ];
-
-          setStructuredPrayers(prayers);
-          calculateNextPrayer(prayers, tomorrowData);
+          setRawDbData({ todayData, tomorrowData, activeIqama });
           setLoading(false);
         }
       } catch (error) {
@@ -104,48 +102,58 @@ export default function HomeClient({ initialBgImage }) {
     fetchPrayersFromDB();
   }, []);
 
-  const calculateNextPrayer = (prayers, tomorrowData) => {
-    const nowMs = new Date().getTime();
-    let current = null;
-    let nextEvt = null;
-
-    for (let i = 0; i < prayers.length; i++) {
-      const p = prayers[i];
-      const adhanTs = getTimestamp(p.adhanTime24);
-      const iqamahTs = getTimestamp(p.iqamahTime24);
-      
-      if (nowMs < adhanTs) {
-        nextEvt = { ...p, type: 'adhan', targetTime: adhanTs };
-        current = i === 0 ? prayers[prayers.length - 1] : prayers[i - 1];
-        break;
-      } else if (iqamahTs && nowMs < iqamahTs) {
-        nextEvt = { ...p, type: 'iqamah', targetTime: iqamahTs };
-        current = p;
-        break;
-      }
-    }
-
-    if (!nextEvt && tomorrowData) {
-       const fajr = prayers[0];
-       const tomorrowFajrTs = getTimestamp(tomorrowData.fajr_adhan, 1);
-       nextEvt = { ...fajr, type: 'adhan', targetTime: tomorrowFajrTs };
-       current = prayers[prayers.length - 1];
-    }
-    
-    setCurrentPrayer(current);
-    setUpcomingEvent(nextEvt);
-  };
-
-  // Timer interval to keep the HUD updated every second
+  // 2. Continuous Engine: Calculate times every second based on the raw DB data
   useEffect(() => {
-    if (loading || structuredPrayers.length === 0) return;
-    const interval = setInterval(() => {
-      // Re-run the HUD calculation every second to keep timers accurate
-      calculateNextPrayer(structuredPrayers, null); 
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [loading, structuredPrayers]);
+    if (loading || !rawDbData) return;
 
+    const updatePrayerState = () => {
+      const { todayData, tomorrowData, activeIqama } = rawDbData;
+      const nowMs = new Date().getTime();
+
+      // Check if Isha Iqamah has passed
+      const todayPrayers = buildPrayers(todayData, activeIqama);
+      const ishaIqamahTs = getTimestamp(todayPrayers[4].iqamahTime24);
+      
+      const isAfterIsha = nowMs >= ishaIqamahTs;
+      setIsTomorrow(isAfterIsha);
+
+      // If after Isha, use tomorrow's schedule for the table. Otherwise, use today's.
+      const displayPrayers = isAfterIsha ? buildPrayers(tomorrowData, activeIqama) : todayPrayers;
+      setStructuredPrayers(displayPrayers);
+
+      // Find the NEXT event (Adhan or Iqamah)
+      let nextEvt = null;
+      for (let i = 0; i < displayPrayers.length; i++) {
+        const p = displayPrayers[i];
+        
+        // If we are showing tomorrow's prayers, we must add +1 day to the timestamp logic
+        const adhanTs = getTimestamp(p.adhanTime24, isAfterIsha ? 1 : 0);
+        const iqamahTs = getTimestamp(p.iqamahTime24, isAfterIsha ? 1 : 0);
+
+        if (nowMs < adhanTs) {
+          nextEvt = { ...p, type: 'adhan', targetTime: adhanTs };
+          break;
+        } else if (nowMs < iqamahTs) {
+          nextEvt = { ...p, type: 'iqamah', targetTime: iqamahTs };
+          break;
+        }
+      }
+
+      // Fallback just in case
+      if (!nextEvt) {
+        nextEvt = { ...displayPrayers[0], type: 'adhan', targetTime: getTimestamp(displayPrayers[0].adhanTime24, isAfterIsha ? 2 : 1) };
+      }
+      
+      setUpcomingEvent(nextEvt);
+    };
+
+    updatePrayerState(); // Run immediately
+    const interval = setInterval(updatePrayerState, 1000); // Check every second
+    
+    return () => clearInterval(interval);
+  }, [loading, rawDbData]);
+
+  // Scrolling logic for the HUD
   useEffect(() => {
     if (loading) return;
     const handleScroll = () => {
@@ -236,7 +244,10 @@ export default function HomeClient({ initialBgImage }) {
           }`}
         >
           <div className="bg-emerald-50 px-4 sm:px-6 py-5 sm:py-6 text-center border-b border-emerald-100">
-            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-black">Today's Prayer Times</h3>
+            {/* Dynamic Header based on time of day */}
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-black">
+              {isTomorrow ? "Tomorrow's Prayer Times" : "Today's Prayer Times"}
+            </h3>
             <p className="text-emerald-800 text-xs sm:text-sm mt-1 opacity-90">Coconut Creek, FL • University of Islamic Sciences, Karachi Hanafi Method</p>
           </div>
           
@@ -258,22 +269,18 @@ export default function HomeClient({ initialBgImage }) {
                   <tbody className="text-stone-800 bg-white">
                     {structuredPrayers.map((prayer) => {
                       const isNext = upcomingEvent?.name === prayer.name;
-                      const isCurrent = currentPrayer?.name === prayer.name;
 
                       return (
                         <tr 
                           key={prayer.name} 
                           className={`border-b border-emerald-100/50 transition-colors bg-white hover:bg-emerald-50 ${
                             isNext ? 'bg-emerald-50/80 border-l-4 border-l-emerald-500' : ''
-                          } ${
-                            isCurrent ? 'bg-stone-50 border-l-4 border-l-stone-300' : ''
                           }`}
                         >
                           <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                             <div className="flex items-center font-bold text-base sm:text-lg">
                               <span>{prayer.name}</span>
                               {isNext && <span className="ml-2 sm:ml-3 text-[8px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-white px-2 py-0.5 sm:py-1 rounded-full shadow-sm">Next</span>}
-                              {isCurrent && <span className="ml-2 sm:ml-3 text-[8px] sm:text-[10px] font-black uppercase tracking-wider bg-stone-200 text-stone-600 px-2 py-0.5 sm:py-1 rounded-full">Current</span>}
                             </div>
                           </td>
                           <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-sm sm:text-base text-stone-700 whitespace-nowrap">
