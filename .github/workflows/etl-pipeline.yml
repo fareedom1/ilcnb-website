@@ -3,7 +3,7 @@ name: Prayer Times ETL Pipeline
 on:
   # Runs automatically on the 25th of every month at Midnight UTC
   schedule:
-    - cron: '0 0 25 * *' 
+    - cron: '0 0 1 * *' 
   
   # Adds a "Run workflow" button in GitHub to trigger manually
   workflow_dispatch: 
