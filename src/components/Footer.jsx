@@ -14,7 +14,7 @@ export default function Footer() {
     { id: '/events', label: 'Events' },
     { id: '/about', label: 'About' },
     { id: '/gallery', label: 'Gallery' },
-    { id: '/donate', label: 'Support' }
+    { id: '/donate', label: 'Donate' }
   ];
 
   // The 5-Tap Logic (Corrected)

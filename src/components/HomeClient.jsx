@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import PrayerHUD from './PrayerHUD'; 
 
@@ -209,6 +210,14 @@ export default function HomeClient({ initialBgImage }) {
           style={bgImage ? { backgroundImage: `url('${bgImage}')` } : {}}
         />
         <div className="absolute bottom-0 left-0 right-0 h-1/10 z-0 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+
+        <Link
+          href="/donate"
+          aria-label="Donate to the Islamic Learning Center of North Broward"
+          className="md:hidden absolute top-4 right-4 z-20 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2.5 text-sm font-bold text-black shadow-lg ring-1 ring-white/80 transition-colors hover:bg-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
+        >
+          Donate
+        </Link>
         
         <div className="relative z-10 w-full max-w-4xl flex flex-col items-center md:mt-8">
           <motion.div 

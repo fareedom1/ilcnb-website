@@ -23,7 +23,7 @@ export default function Header() {
     { id: '/events', label: 'Events', icon: Calendar },
     { id: '/about', label: 'About', icon: Info },
     { id: '/gallery', label: 'Gallery', icon: ImageIcon },
-    { id: '/donate', label: 'Support', icon: HeartHandshake }
+    { id: '/donate', label: 'Donate', icon: HeartHandshake }
   ];
 
   // 1. Play video automatically on website load (No artificial timer)
@@ -102,13 +102,15 @@ export default function Header() {
                 key={link.id}
                 href={link.id}
                 className={`relative px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
-                  pathname === link.id ? 'text-emerald-900' : 'text-stone-500 hover:text-emerald-700 hover:bg-stone-50'
+                  link.id === '/donate'
+                    ? 'bg-emerald-700 text-white shadow-md hover:bg-emerald-800 hover:shadow-lg'
+                    : pathname === link.id ? 'text-emerald-900' : 'text-stone-500 hover:text-emerald-700 hover:bg-stone-50'
                 }`}
               >
                 {pathname === link.id && (
                   <motion.div 
                     layoutId="activeTab"
-                    className="absolute inset-0 bg-emerald-100 rounded-full"
+                    className={`absolute inset-0 rounded-full ${link.id === '/donate' ? 'bg-emerald-800' : 'bg-emerald-100'}`}
                     style={{ zIndex: 0 }}
                   />
                 )}

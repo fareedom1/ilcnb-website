@@ -3,7 +3,7 @@ import { Clock, MapPin, Users, Heart, DollarSign, HeartHandshake } from 'lucide-
 
 export const metadata = {
   title: 'Donate - ILCNB',
-  description: 'Support the Islamic Learning Center of North Broward. Your donations help us maintain the mosque, host events, and plan for future expansion.',
+  description: 'Donate to the Islamic Learning Center of North Broward. Your donations help us maintain the mosque, host events, and plan for future expansion.',
 };
 
 export default function DonatePage() {
@@ -17,7 +17,7 @@ export default function DonatePage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full">
       <div className="text-center max-w-3xl mx-auto mb-16">
         <h1 className="text-3xl md:text-4xl font-extrabold text-stone-900 mb-8 tracking-tight flex flex-col sm:flex-row items-center justify-center gap-3">
-          Support Your Mosque <Heart className="text-rose-500 fill-rose-500" size={32} />
+          Donate to Your Mosque <Heart className="text-rose-500 fill-rose-500" size={32} />
         </h1>
         <blockquote className="bg-emerald-50/50 p-6 sm:p-8 rounded-3xl border border-emerald-100 italic text-stone-700 text-base sm:text-lg shadow-sm">
           <p className="mb-4">“You shall never attain the (perfect standard) of righteousness until you spend (in charity) from (the wealth) that you love; and whatever you spend, Allāh surely knows it.”</p>
